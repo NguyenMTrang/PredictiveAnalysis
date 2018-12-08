@@ -112,8 +112,59 @@ d.drop(d.columns[[0]],axis = 1, inplace = True)
 data_group = data.groupby(['State','Area Code'])['Phone'].count()
 data.info()
 
+
+grouped = data.groupby('State')
+grouped.groups
+
+for names,groups in grouped:
+    print(names)
+    print(groups)
+    
+# selecting a single group:
+grouped.get_group('CA')
+ca_data = data[data['State'] == 'CA']
+
+
+grouped = data.groupby(['State','Area Code'])
+grouped.get_group(('CA',415)).shape
+test = grouped.sum()
+test = data.corr()
+grouped.size()
+
+
+data.shape
+
+grouped.aggregate({'Day Mins': np.sum, 'Day Calls': np.sum, 'Day Charge': np.average})
+grouped.aggregate([np.sum, np.mean, np.std]) # apply to all columns 
+# using lambda:
+
+grouped.aggregate({'Day Mins': np.sum, 'Day Calls': np.sum, 'Day Charge' :lambda x : np.sum(x)/1000})
+
+grouped['Day Mins'].filter(lambda x: np.sum(x) > 1500)
+
 #%% FIT ==> PREDICT ==> EVALUATE (accuracy 65 - 90% good)
 # First choice: the supposted vector learning Machine model
 # Then, gradent descent.
 
+#%% TRANSFORMATION
 
+zscore = lambda x: (x - x.mean()) / x.std()
+grouped.transform(zscore)
+
+
+f = lambda x: x.fillna(x.mean())
+grouped.transform(f)
+
+grouped.nth(1)
+
+data = data.sort(['State','Area Code'])
+
+#%% Splitting a dataset in training and testing dataset:
+
+from sklearn.cross_validation import train_test_split
+train, test = train_test_split(data, test_size = 0.2)
+
+
+#%% Concatenating and appending data:
+
+data =pd.concat([train,test],axis=0)
