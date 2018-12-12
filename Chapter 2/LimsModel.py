@@ -83,7 +83,7 @@ pd.crosstab(data.SpecialSkillID,data.AppointmentStatus).plot(kind = 'bar')
 
 
 #%% Over-sampling useing SMOTE
-https://anaconda.org/conda-forge/imbalanced-learn
+#https://anaconda.org/conda-forge/imbalanced-learn
 
 from imblearn import under_sampling, over_sampling
 X = data.loc[:, data.columns != 'AppointmentStatus']
@@ -94,6 +94,16 @@ os = SMOTE(random_state=0)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
 columns = X_train.columns
 
+
+os_data_X,os_data_y=os.fit_sample(X_train, y_train)
+os_data_X = pd.DataFrame(data=os_data_X,columns=columns )
+os_data_y= pd.DataFrame(data=os_data_y,columns=['y'])
+# we can Check the numbers of our data
+print("length of oversampled data is ",len(os_data_X))
+print("Number of no subscription in oversampled data",len(os_data_y[os_data_y['y']==0]))
+print("Number of subscription",len(os_data_y[os_data_y['y']==1]))
+print("Proportion of no subscription data in oversampled data is ",len(os_data_y[os_data_y['y']==0])/len(os_data_X))
+print("Proportion of subscription data in oversampled data is ",len(os_data_y[os_data_y['y']==1])/len(os_data_X))
 #%% 
 # https://towardsdatascience.com/building-a-logistic-regression-in-python-step-by-step-becd4d56c9c8
 
