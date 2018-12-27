@@ -34,7 +34,8 @@ data.columns
 wanted_columns = ['TaskType','AppointmentType','AppointmentStatus','Language','ForcedAppointment','SameDayAsApplied','Lobby',   'DayNumberOfWeek', 'DayNumberOfMonth','AppHour','Attempts', 'Reschedules',
        'NoShows']
 
-wanted_columns_test = ['TaskTypeID','SubTaskTypeID','AppointmentStatus','LanguageID','ForcedAppointment','SameDayAsApplied','LobbyBureauID',   'DayNumberOfWeek', 'DayNumberOfMonth','AppHour','Attempts', 'Reschedules','NoShows']
+#wanted_columns_test = ['TaskTypeID','SubTaskTypeID','AppointmentStatus','LanguageID','ForcedAppointment','SameDayAsApplied','LobbyBureauID',   'DayNumberOfWeek', 'DayNumberOfMonth','AppHour','Attempts', 'Reschedules','NoShows']
+wanted_columns_test = ['TaskTypeID','SubTaskTypeID','AppointmentStatus','LanguageID','ForcedAppointment','SameDayAsApplied','LobbyBureauID',   'DayNumberOfWeek', 'DayNumberOfMonth','AppHour']
 data = data[wanted_columns_test]
 
 # Delete if appointment is forced checking and map appointments 'Showed' = 1, 
@@ -46,9 +47,9 @@ data['ForcedAppointment'] = data['ForcedAppointment'].map({'N':0,'Y':1})
 data['SameDayAsApplied'] = data['SameDayAsApplied'].map({'N':0,'Y':1})
 
 
-data['Attempts'] = data['Attempts'].fillna(0)
-data['Reschedules'] = data['Reschedules'].fillna(0)
-data['NoShows'] = data['NoShows'].fillna(0)
+#data['Attempts'] = data['Attempts'].fillna(0)
+#data['Reschedules'] = data['Reschedules'].fillna(0)
+#data['NoShows'] = data['NoShows'].fillna(0)
 
 data.info()
 data['AppointmentStatus'].unique()
@@ -60,16 +61,67 @@ data.info()
 
 data.to_csv('cleansed.csv',sep =',')
 
-#%% Building model
+#%%split the data into 3 sets of data: train, validation, test sets:
 X = data.drop('AppointmentStatus',axis =1)
 y = data['AppointmentStatus']
 
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=1)
 
 
+#%% 
+from sklearn.linear_model import LogisticRegression
+#model = LogisticRegression(C= 0.002)
+
+model = SVC(kernel = 'linear',class_weight={1: 100})
+model.fit(X_train, y_train)
+y_predict = model.predict(X_val)
+
+
+
+#%% Confusion Matrix:
+from sklearn.metrics import confusion_matrix
+confusion_matrix = confusion_matrix(y_val, y_predict)
+print(confusion_matrix)
+
+#%% Compute precision:
+from sklearn.metrics import classification_report
+print(classification_report(y_val, y_predict)) #Precision/Recall
+accuracy_score(y_val,y_predict)
+
+print('Accuracy of logistic regression classifier on validation set: {:.5f}'.format(model.score(X_val, y_val)))
+
+
+print('Accuracy of logistic regression classifier on test set: {:.5f}'.format(model.score(X_test, y_test)))
+y_predict_test = model.predict(X_test)
+from sklearn.metrics import confusion_matrix
+confusion_matrix = confusion_matrix(y_test, y_predict_test)
+print(confusion_matrix)
+print(classification_report(y_test, y_predict_test)) #Precision/Recall
+accuracy_score(y_test,y_predict_test)
+
+
+#%% Choosing the regulaziration:
+C = np.linspace(0.0001,0.01,100)
+train_error = []
+crossvalidation_error = []
+
+for x in C:
+    model = LogisticRegression(C=x)
+    model.fit(X_train, y_train)
+    train_error.append(1-model.fit(X_train, y_train).score(X_val, y_val))
+    crossvalidation_error.append(1-model.fit(X_train, y_train).score(X_train, y_train))
+    
+plt.plot(C,train_error,'b',C,crossvalidation_error,'r')
+plt.show()
+
+    
+
+#%%
+#%% Building model - Test to see what columns should be selected for the model.
 
 test = data.groupby('AppointmentStatus').mean()
-
-
 
 pd.crosstab(data.DayNumberOfWeek,data.AppointmentStatus).plot(kind = 'bar') #Y
 
